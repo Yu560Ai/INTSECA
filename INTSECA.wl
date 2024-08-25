@@ -10,6 +10,7 @@
 
 (*BeginPackage["INTSECA`"];*)
 Print["INTSECA 1.0.3"]
+Print["Author: Yuhan Fu"];
 
 t::usage = "list to bracket";
 tp::usage = "bracket to list";
