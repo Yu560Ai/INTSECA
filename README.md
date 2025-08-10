@@ -1,6 +1,6 @@
 # INTSECA
 
-This repository contains Mathematica notebooks that provide details of applying twisted **int**er**sec**tion theory to derive differential equations for cosmological correlators.
+This repository contains Mathematic**A** notebooks that provide details of applying twisted **INT**er**SEC**tion theory to derive differential equations for cosmological correlators.
 
 This package implements the twisted intersection-theory machinery to:
 
