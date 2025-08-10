@@ -56,7 +56,7 @@ psi = Global`psi;
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Intermediate variables*)
 
 
@@ -82,7 +82,7 @@ dkin = Map[Symbol["d" <> ToString[#]] &, kin];
 (*Functions*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Tools*)
 
 
@@ -202,9 +202,6 @@ Prepend[funcs,"# boundaries"]},Frame->All]
 
 
 
-
-
-
 (* ::Subsubsection:: *)
 (*A-matrix via intersection theory*)
 
@@ -269,9 +266,10 @@ DkinComp=DkinComp/.sol//Simplify//Apart;
 Return[DkinComp]
 )
 
-APRT=expr_:>(Module[{terms},(*Break down the expression only if it's a sum of terms*)terms=If[Head[expr]===Plus,List@@expr,{expr}];
-(*Apply Apart only on terms that are fractions*)terms=Apart/@terms;
-Total[terms]  (*Sum the processed terms*)]);
+(*a thorough "Apart" for entries of A-matrix*)
+APRT=expr_:>(Module[{terms},terms=If[Head[expr]===Plus,List@@expr,{expr}];
+terms=Apart/@terms;
+Total[terms]]);
 
 AMatrix[mode_:1]:=(
 sol=Sol[mode];
