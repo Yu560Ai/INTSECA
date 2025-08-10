@@ -5,7 +5,7 @@ This repository contains Mathematic**A** notebooks that provide details of apply
 This package implements the twisted intersection-theory machinery to:
 
 - generate master integrals for the given twisted integral,
-- reduce to the master integrals of physical interest
+- reduce to the master integrals of physical interest,
 - build the associated (canonical) differential system (A-matrix), and
 - derive scalar ODEs for correlators via kinematic flows.
 
