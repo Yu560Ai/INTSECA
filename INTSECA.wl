@@ -1,80 +1,100 @@
 (* ::Package:: *)
 
-(*
-	INTSECA
-	Intersection theory for differential equation of twisted integral
-	Copyright (C) 2024 Yuhan Fu
-	yuhanyfu@gmail.com
-*)
+(* ::Subsubsection:: *)
+(*Basic info*)
 
 
-(*BeginPackage["INTSECA`"];*)
-Print["INTSECA 1.0.3"]
-Print["Author: Yuhan Fu"];
+BeginPackage["INTSECA`"];
+Print["INTSECA 1.2.0"]
+(*Print["Author: Yuhan Fu"];*)
 
+(*tools*)
 t::usage = "list to bracket";
 tp::usage = "bracket to list";
-simplexBasis::usage = "Automatically generates basis if all simplexes";
-phiJList::usage = "Collect all nonzero \[CurlyPhi]\[LeftAngleBracket]J\[RightAngleBracket]";
-Omega::usage = "\[Omega]";
-OmegaV::usage = "Collect all nonzero \[Omega]\[Wedge]\[CurlyPhi]\[LeftAngleBracket]J-1\[RightAngleBracket]";
-coordinate::usage = "Solve the coordinate of a vertex";
-XXComp::usage = "Decomposes basis to canonical form of vertices, \[LeftAngleBracket]a,b,c,\[CenterDot]\[CenterDot]\[RightAngleBracket]";
-DKinVertex::usage = "Lifts the external derivative of canonical form of vertex (in fiber) to canonical form of vertex in total space";
-DKinCollect::usage = "Collects the \!\(\*SubscriptBox[\(\[Del]\), \(x\)]\)\!\(\*SubscriptBox[\(e\), \(i\)]\) in terms of canonical form of vertices in total space";
-Cin::usage = "Remove the numerator as linear combination of Subscript[l, i]'s appears in the denominator";
-DKinComp::usage = "Decomposes the \!\(\*SubscriptBox[\(\[Del]\), \(x\)]\)\!\(\*SubscriptBox[\(e\), \(i\)]\) in terms of canonical form of vertices in fiber";
-IntSec::usage = "Intersection number computing: \[LeftAngleBracket]\!\(\*SubscriptBox[\(e\), \(i\)]\)|\[CenterDot]\[RightAngleBracket]";
-CMatrix::usage = "Computes the intersection matrix of bases: \!\(\*SubscriptBox[\(C\), \(ij\)]\)=\[LeftAngleBracket]\!\(\*SubscriptBox[\(e\), \(i\)]\)|\!\(\*SubscriptBox[\(e\), \(j\)]\)\[RightAngleBracket]";
-CiCoeff::usage = "Gives the linear coefficient for projecting Feynman integral into basis integrals";
-AMatrix::usage = "Gives the connnection matrix A for each given kinematic variable.";
-UMatrix::usage = "Gives the tranformation matrix that change the bases (\!\(\*SubscriptBox[\(e\), \(1\)]\),\[Ellipsis],\!\(\*SubscriptBox[\(e\), \(\[Nu]\)]\)) to (\[Phi],\[PartialD]\[Phi],\[Ellipsis],\!\(\*SuperscriptBox[\(\[PartialD]\), \(\[Nu] - 1\)]\)\[Phi])";
-PicardFuchs::usage = "Gives the Picard-Fuchs operator for Feynman integral";
-DEQ::usage = "Gives the coefficient of each order of derivatives in the differential equation for the Feynman integral.";
+sort::usage = "sort \[LeftAngleBracket]J\[RightAngleBracket]";
+initialize::usage = "Initialize the intermediate variables to be used in INTSECA";
+
+(*basis*)
+verticesList::usage = "Find the set of all \[LeftAngleBracket]J\[RightAngleBracket]";
+multiRelations::usage = "Gives the relations from common intersection of multiple hyperplanes";
+Sol::usage = "Sol";
+(*Sol0::usage = "Sol on given set of vertices";*)
+BdyBasis::usage = "{Bdy,Basis}";
+BdyBasis0::usage = "Boundary structure for any given set of vertices";
+funcTree::usage = "Plot the directed graph for basis";
+
+(*A-matrix*)
+AMatrix::usage = "A-matrix for each kinematic variable";
+KineFlow::usage = "Kinematic flow for basis";
+EquationFlow::usage = "{Flow,phiStoNum}, Differential equation of kinematic flow";
+Needed::usage = "{basisNeed,AmatrixNeed}";
+ATotal::usage = "total derivative A-matrix (for single twist): entries are the Log functions";
+Letter::usage = "Collect all letter from the A-matrix (Log)";
+
+
+(* ::Section:: *)
+(*Set-up*)
+
+
+Begin["`Private`"];
+
+
+(* ::Subsection:: *)
+(*Input*)
+
+
+(*Input*)
+dim = Global`dim;
+nkin = Global`nkin;
+kin = Global`kin;
+nBplane = Global`nBplane;
+nTplane = Global`nTplane;
+powers = Global`powers;
+B = Global`B;
+T = Global`T;
+psi = Global`psi;
 
 
 
-
-(*Begin["`Private`"];*)
-
-
-(*----------import Global values----------*)
-
-nkin:=Global`nkin;
-kin:=Global`kin;
-nplane:=Global`nplane;
-powers:=Global`powers;
-nu:=Global`nu;
-Lplanes:=Global`Lplanes;
-jacT:=Global`jacT;
-permT:=Global`permT;
-vertex:=Global`vertex;
-orient:=Global`orient;
+(* ::Subsection:: *)
+(*Intermediate variables*)
 
 
-(*----------default settings----------*)
-dim:=Global`dim;
-(*Clear[c,jacT,permT];*)
-{z[1],z[2],z[3],z[4]}={z1,z2,z3,z4}; 
-Xproj:=Append[Table[z[i],{i,1,dim}],1];
-t[{a__}]:=\[LeftAngleBracket]a\[RightAngleBracket] (*transform list to \[LeftAngleBracket]...\[RightAngleBracket] symbol*)
-tp[f_]:=f/.\[LeftAngleBracket]a__\[RightAngleBracket]:>{a} (*transform \[LeftAngleBracket]...\[RightAngleBracket] symbol to list*)
+(*Initialize*)
+initialize[] := (
+nplane = nBplane+nTplane;
+X = Append[Table[z[i] = Symbol["z" <> ToString[i]], {i, 1, dim}],1];
+Lplanes = Join[Table[Global`B[i] . X, {i, nBplane}], Table[Global`T[i] . X, {i, nTplane}]];
+jacT =JacT[Lplanes];
+permT =PermT[dim,nkin];
+Jac =Table[D[Lplanes[[i]],z[j]],{j,1,dim},{i,1,Length[Lplanes]}];
 
+replaceTplane=Table[i->(i+nBplane),{i,1,nTplane}];
+power=Join[ConstantArray[0,{nBplane}],powers];
+(*power=powers; *)
 
-(*----------automatically generate basis if all simplexes----------*)
-simplexBasis[simplexes_List,dim_:dim]:=(
-Nu=Length[simplexes];
-Vertex=Table[Subsets[simplexes[[i]],{dim}]
-,{i,1,Nu}];
-Orient=Table[-(-1)^Range[Length[Vertex[[i]]]],{i,1,Nu}];
-(*sort*)
-Orient=Table[Orient[[i,j]]*Signature[Vertex[[i,j]]],{i,1,Nu},{j,1,Length[Vertex[[i]]]}];
-Vertex=Table[Sort[Vertex[[i,j]]],{i,1,Nu},{j,1,Length[Vertex[[i]]]}];
-Return[{Vertex,Orient}]
+(*dkin=Map["d"<>ToString[#]&,kin];*)
+dkin = Map[Symbol["d" <> ToString[#]] &, kin];
 );
 
 
-(*----------find \[CurlyPhi]\[LeftAngleBracket]J\[RightAngleBracket] basis----------*)
+(* ::Section:: *)
+(*Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Tools*)
+
+
+t[{a__}] := \[LeftAngleBracket]a\[RightAngleBracket]; (* Transform list to \[LeftAngleBracket]...\[RightAngleBracket] symbol *)
+tp[f_]:=f/.\[LeftAngleBracket]a__\[RightAngleBracket]:>{a} (*transform \[LeftAngleBracket]...\[RightAngleBracket] symbol to list*)
+sort={\[LeftAngleBracket]a__\[RightAngleBracket]:>Signature[{a}]*t[Sort[{a}]]};
+
+
+(* ::Subsubsection::Closed:: *)
+(*Wedge product*)
+
+
 rules={Wedge[\[LeftAngleBracket]a__\[RightAngleBracket],\[LeftAngleBracket]a__\[RightAngleBracket]]:>0,Wedge[\[LeftAngleBracket]a__\[RightAngleBracket],\[LeftAngleBracket]b__\[RightAngleBracket]]:>If[OrderedQ[{{a},{b}}],Wedge[\[LeftAngleBracket]a\[RightAngleBracket],\[LeftAngleBracket]b\[RightAngleBracket]],-Wedge[\[LeftAngleBracket]b\[RightAngleBracket],\[LeftAngleBracket]a\[RightAngleBracket]]],
 Wedge[c_*\[LeftAngleBracket]a__\[RightAngleBracket],\[LeftAngleBracket]b__\[RightAngleBracket]]:>c*Wedge[\[LeftAngleBracket]a\[RightAngleBracket],\[LeftAngleBracket]b\[RightAngleBracket]],Wedge[\[LeftAngleBracket]a__\[RightAngleBracket],d_*\[LeftAngleBracket]b__\[RightAngleBracket]]:>d*Wedge[\[LeftAngleBracket]a\[RightAngleBracket],\[LeftAngleBracket]b\[RightAngleBracket]],Wedge[(c1_*term1_+rest_),(term2_)]:>Wedge[c1*term1,term2]+Wedge[rest,term2],
 Wedge[c_,d_*\[LeftAngleBracket]b__\[RightAngleBracket]]:>c*d*\[LeftAngleBracket]b\[RightAngleBracket],Wedge[c_*\[LeftAngleBracket]a__\[RightAngleBracket],d_]:>c*d*\[LeftAngleBracket]a\[RightAngleBracket]};
@@ -85,31 +105,108 @@ Wedge[\[LeftAngleBracket]a__\[RightAngleBracket],\[LeftAngleBracket]b__\[RightAn
 Wedge[\[LeftAngleBracket]a__\[RightAngleBracket]]:>\[LeftAngleBracket]a\[RightAngleBracket]
 };
 
-sort={\[LeftAngleBracket]a__\[RightAngleBracket]:>Signature[{a}]*t[Sort[{a}]]};
-
-(*verticesList(*[dim_:dim]*):=t/@Sort[Sort/@(Select[Flatten[With[{limits=Table[{Subscript[i,k],If[k==1,1,Subscript[i,k-1]+1],nplane},{k,1,dim}]},Table[Array[Subscript[i,#]&,dim],Evaluate[Sequence@@limits]]],dim-1],!Det[Jac[[All,#]]]===0&])];
-*)
-parallel=\[LeftAngleBracket]a__\[RightAngleBracket]/;Det[Jac[[All,{a}]]]===0->0;
+parallel:=\[LeftAngleBracket]a__\[RightAngleBracket]/;Det[Jac[[All,{a}]]]===0->0;
 parallelRemove[v_List]:=DeleteCases[v//.parallel,0];
-phiJList[n_]:=t/@Sort[Sort/@(Flatten[With[{limits=Table[{Subscript[i,k],If[k==1,1,Subscript[i,k-1]+1],nplane},{k,1,n}]},Table[Array[Subscript[i,#]&,n],Evaluate[Sequence@@limits]]],n-1])];
-(*verticesList:=Select[phiJList[dim],!Det[Jac[[All,#//tp]]]===0&];*)
+
+
+(* ::Subsubsection:: *)
+(*Find basis*)
+
+
+(* Function to collect all nonzero <J> *)
+phiJList[n_] := 
+  t /@ Sort[Sort/@
+    Flatten[With[{limits = 
+        Table[{Subscript[i, k], If[k == 1, 1, Subscript[i, k - 1] + 1], nplane}, {k, 1, n}]}, 
+      Table[Array[Subscript[i, #] &, n], Evaluate[Sequence @@ limits]]], n - 1]];
+
 verticesList:=phiJList[dim]//parallelRemove;
-Omega:=powers . (t/@Array[{#}&,nplane]);
+
+Omega:=powers . (t/@Array[{#+nBplane}&,nTplane]);
+(*Omega:=powers . (t/@Range[nplane]);*)
 OmegaV[xi_List]:=Table[Wedge[Omega,xi[[i]]]//.rules//.wedgeToBracketRule//.sort,{i,1,Length[xi]}]//parallelRemove;
 
 coordinate[Vertex_]:=
-First@(Solve[Map[Lplanes[[#]]==0&,tp[Vertex]],{z1,z2,z3,z4}]//Simplify);
+First@(Solve[Map[Lplanes[[#]]==0&,tp[Vertex]],X[[1;;dim]]]//Simplify);
 
+(*Relations*)
 multiIntsec[vertexToIntsec_List]:=(
 Hypers=Select[vertexToIntsec,Length[#]>1&];
 Return[Table[Total[Hypers[[i]]]==0,{i,1,Length[Hypers]}]]
 )
 
+multiRelations[vertices_List]:=(
+vertexToIntsec=GroupBy[vertices,coordinate];
+multirelations=multiIntsec[vertexToIntsec//Values];
+Return[multirelations]
+)
 
-(*----------decompose to vertices----------*)
-XXComp[Vertex_List,Coeff_List]:=Table[
-Sum[Coeff[[i,ni]]*t[Vertex[[i,ni]]],{ni,1,Length[Vertex[[i]]]}]
-,{i,1,Length[Vertex]}];
+Relations[vertices_List, mode_:1] :=(
+omegaV=OmegaV[phiJList[dim-1]];
+multirelations=If[mode==1,multiRelations[vertices],{}];
+Return[Join[(#==0&/@omegaV),multirelations]]
+)
+
+Sol[mode_:1]:=(
+vertices=verticesList;
+relations=Relations[vertices,mode];
+sol=Solve[relations,vertices]//First//Cancel//Simplify//Quiet;
+Return[sol]
+)
+
+(*Sol0[vertices_List]:=(
+relations=Relations[vertices];
+sol=Solve[relations,vertices]//First//Cancel//Simplify//Quiet;
+Return[sol]
+)*)
+
+(*Find basis*)
+boundary[vertex_List]:=Complement[vertex,Range[nBplane+1,nplane]]
+BdyphiJList[n_]:=(
+t/@Sort[Sort/@(
+Flatten[With[{limits=Table[{Subscript[i,k],If[k==1,1,Subscript[i,k-1]+1],nTplane},{k,1,n}]},Table[Array[Subscript[i,#]&,n],Evaluate[Sequence@@limits]]],n-1]
+)])/.replaceTplane;
+
+BdyBasis[mode_:1]:=(
+vertices=verticesList;
+sol=Sol[mode];
+Basis=Complement[vertices,sol[[All,1]]];
+bdyGrp=GroupBy[tp/@Basis,boundary];
+Bdy=bdyGrp//Keys;
+BdyVertices=Map[t,(bdyGrp//Values),{2}];
+BdyVertices=BdyVertices[[Ordering[Bdy]]];
+Bdy=Bdy//Sort;
+Return[{Bdy,BdyVertices}]
+)
+
+BdyBasis0[vertices_List]:=(
+bdyGrp=GroupBy[tp/@vertices,boundary];
+Bdy=bdyGrp//Keys;
+BdyVertices=Map[t,(bdyGrp//Values),{2}];
+BdyVertices=BdyVertices[[Ordering[Bdy]]];
+Bdy=Bdy//Sort;
+Return[{Bdy,BdyVertices}]
+)
+
+
+
+(*Plot the boundary structure*)
+funcTree[list_]:=Block[{graph,funcs,Nsite},
+Nsite=Length@list[[-1]];
+graph=ResourceFunction["HasseDiagram"][SubsetQ[#2,#1]&,list,VertexShapeFunction->"Name",GraphLayout->"LayeredDigraphEmbedding"];
+funcs=Length@Cases[list,#]&/@Table[_,{i,0,Nsite},{j,i}];
+Print[graph];
+Grid[{Prepend[Table[i,{i,0,Nsite}],"# codimension"],
+Prepend[funcs,"# boundaries"]},Frame->All]
+]
+
+
+
+
+
+
+(* ::Subsubsection:: *)
+(*A-matrix via intersection theory*)
 
 
 (*----------derivative w.r.t kinematic variables----------*)
@@ -122,14 +219,17 @@ Table[
 Sum[
 (
 Signature[permT[[nkin,i]]]
-(powers[[Ad]]/( Subscript[l, Ad] Product[Subscript[l, Vertex[[j]]],{j,1,dim}])) 
+(power[[Ad]]/( Subscript[l, Ad] Product[Subscript[l, Vertex[[j]]],{j,1,dim}])) 
 jacT[[Ad,permT[[n,i,1]]]] 
 Product[jacT[[Vertex[[k]],permT[[n,i,1+k]]]],{k,1,dim}]
 )
 ,{i,1,Length[permT[[1]]]},{Ad,1,nplane}]
 ,{n,1,nkin}];
 
-DKinCollect(*[nkin_:nkin,nu_:nu]*):=(
+DKinCollect[Basis_List]:=(
+nu=Basis//Length;
+vertex={Basis//tp}//Transpose;
+orient=ConstantArray[{1},nu];
 DkinCollect=Table[Sum[orient[[i,j]] DKinVertex[vertex[[i,j]]],{j,1,Length[vertex[[i]]]}],{i,1,nu}];
 Lindex=Table[{},{nkin},{nu}];Lcoeff=Table[{},{nkin},{nu}];
 subL=Subsets[Range[nplane],{dim+1}];
@@ -144,10 +244,10 @@ Return[{Lindex,Lcoeff}]
 )
 
 Cin[VertexP_List,nume_]:=(
-nume0=Sum[Subscript[c, VertexP[[i]]] Lplanes[[VertexP[[i]]]],{i,1,dim+1}]-nume//Simplify;sol=Solve[Append[Table[Coefficient[nume0,z[i]]==0,{i,1,dim+1}],(nume0/.Table[z[i]->0,{i,1,dim}])==0],Table[Subscript[c,VertexP[[i]]],{i,1,dim+1}]]//Quiet;
-Return[First@sol]);
+nume0=Sum[Subscript[c, VertexP[[i]]] Lplanes[[VertexP[[i]]]],{i,1,dim+1}]-nume//Simplify;sol0=Solve[Append[Table[Coefficient[nume0,z[i]]==0,{i,1,dim+1}],(nume0/.Table[z[i]->0,{i,1,dim}])==0],Table[Subscript[c,VertexP[[i]]],{i,1,dim+1}]]//Quiet;
+Return[First@sol0]);
 
-DKinComp[nKin_,DKinCollect_List]:=(
+DKinComp[nKin_,DKinCollect_List,sol_List]:=(
 Lindex=DKinCollect[[1]];
 Lcoeff=DKinCollect[[2]];
 subL=Subsets[Range[nplane],{dim+1}];
@@ -165,62 +265,82 @@ Sum[vertexList=vertexListT[[Complement[Range[1+dim],{n}]]];
 DkinComp=DkinComp/.Table[Subscript[c, i]->0,{i,1,nplane}];
 rule:=\[LeftAngleBracket]a__\[RightAngleBracket]:>(1/Det[jacT[[{a},nkin+1;;nkin+dim]]])\[LeftAngleBracket]a\[RightAngleBracket];
 DkinComp=DkinComp/.rule;
+DkinComp=DkinComp/.sol//Simplify//Apart;
 Return[DkinComp]
 )
 
+APRT=expr_:>(Module[{terms},(*Break down the expression only if it's a sum of terms*)terms=If[Head[expr]===Plus,List@@expr,{expr}];
+(*Apply Apart only on terms that are fractions*)terms=Apart/@terms;
+Total[terms]  (*Sum the processed terms*)]);
 
-(*----------Intersection number computing----------*)
-IntSec[XXComp_List(*,vertex_:vertex,orient_:orient*)]:=Table[
-Sum[(1/Times@@powers[[vertex[[i,ni]]]])orient[[i,ni]]*Coefficient[XXComp[[j]],t[vertex[[i,ni]]]]//Simplify
-,{ni,1,Length[vertex[[i]]]}]
-,{i,1,Length[vertex]},{j,1,Length[XXComp]}];
-
-
-(*----------CMatrix, CiCoeff and AMatrix----------*)
-CMatrix[eiComp_List]:=IntSec[eiComp]//Simplify;
-CiCoeff[phiComp_List,Cmatrix_List]:=Inverse[Cmatrix] . IntSec[phiComp]//Simplify;
-AMatrix[dKinComp_List,Cmatrix_List]:=Transpose[IntSec[dKinComp]] . Inverse[Cmatrix]//Simplify//Apart;
-
-
-(*----------Differential equation----------*)
-UMatrix[Amatrix_List,Cicoeff_List,nKin_]:=(
-s=kin[[nKin]];
-U=ConstantArray[0,Length[Cicoeff]{1,1}];
-U[[1,All]]=Cicoeff[[All,1]];
-	Do[U[[i,All]]=D[U[[i-1,All]],s]+U[[i-1,All]] . Amatrix//Simplify
-,{i,2,Length[Cicoeff]}];
-Return[U]
-);
-
-PicardFuchs[Umatrix_List,Amatrix_List,nKin_]:=(
-s=kin[[nKin]];
-Uinv=Inverse[Umatrix]//Simplify;
-Bmatrix=D[Umatrix,s] . Uinv+Umatrix . Amatrix . Uinv//Simplify;
-Print[Bmatrix//MatrixForm];
-clist=Append[Bmatrix[[Length[Amatrix],All]],-1]//Simplify;
-Return[clist]
-);
-
-DEQ[Amatrix_List,Cicoeff_List,nKin_]:=(
-Umatrix=UMatrix[Amatrix,Cicoeff,nKin];
-If[MatrixRank[Umatrix]==Length[Cicoeff],
-Return[PicardFuchs[Umatrix,Amatrix,nKin]],
-(
-Do[nuReduced=Subsets[Range[nu],{MatrixRank[Umatrix]}][[i]];If[MatrixRank[Umatrix[[nuReduced,nuReduced]]]==MatrixRank[Umatrix],
-(
-AmatrixReduced =Amatrix[[nuReduced,nuReduced]];
-CicoeffReduced=Cicoeff[[nuReduced]];
-UmatrixReduced=UMatrix[AmatrixReduced,CicoeffReduced,nKin];
-Print["independent bases: ",nuReduced];
-Break[]
+AMatrix[mode_:1]:=(
+sol=Sol[mode];
+bdyBasis=BdyBasis[mode];
+basis=bdyBasis[[2]]//Flatten;
+nu=Length[basis];
+dKinCollect=DKinCollect[basis];
+Amatrix=Table[
+dKinComp=DKinComp[nKin=i,dKinCollect,sol];
+Table[Coefficient[dKinComp[[i]],basis[[j]]]//Apart/.APRT,{i,1,nu},{j,1,nu}](*//Apart*)
+,{i,1,nkin}];
+Return[Amatrix]
 )
-,Clear[UmatrixReduced]]
-,{i,1,Binomial[nu,MatrixRank[Umatrix]]}];
-Return[PicardFuchs[UmatrixReduced,AmatrixReduced,nKin]]
-)
+
+(*Kinematic flow from A-matrix*)
+KineFlow[psi_,Basis_List,Amatrix_List]:=(
+nu=Length[Amatrix];
+ciCoeff=Table[Coefficient[psi,Basis[[i]]],{i,1,nu}];
+nonzeroCi=Complement[Range[nu],Position[ciCoeff,x_/;x===0][[All,1]]];
+level=nonzeroCi; (*level0: the starting level of the flow*)
+EachLevel={};
+nonzeroA[aMatrixi_List]:=Complement[Range[nu],Position[aMatrixi,x_/;x===0][[All,1]]];
+While[level!={},
+EachLevel=AppendTo[EachLevel,level];
+nonzeroAij=Table[Amatrix[[level[[i]]]]//nonzeroA,{i,1,Length[level]}];
+level=Complement[nonzeroAij//Flatten,EachLevel//Flatten];
 ];
+Return[EachLevel]
+)
+
+Needed[Amatrix_List,psiSol_,basis_List]:=(
+kineFlow=KineFlow[psiSol,basis,Amatrix];
+basisNeeded=kineFlow//Flatten;
+basisNeed=basis[[basisNeeded]];
+AmatrixNeed=Amatrix[[basisNeeded,basisNeeded]];
+(*Print[basisNeed];*)
+Return[{basisNeed,AmatrixNeed}]
 )
 
 
-(*End[];
-EndPackage[];*)
+(*Total derivative A-matrix*)
+toPositive=x_:>-x/;(First[x]//Length)==2;
+toLogForm[expr_,i_]:=Module[
+{terms},terms=If[Head[expr]===Plus,List@@expr,{expr}];(*Check if the input is a sum or a single term*)
+terms//Simplify;
+Table[Numerator[term]*Log[Denominator[term]/.toPositive]/Coefficient[Denominator[term],kin[[i]]]/. {ComplexInfinity->0,Indeterminate->0}//Quiet,{term,terms}](*Process each term individually and return the results as a list*)
+]
+
+Letter[amatrix_List]:=Module[{letterLog,letter},
+letterLog=Cases[amatrix,_Log,Infinity]//Union;
+letter=letterLog/. Log[x_]:>x;
+(*Map[If[(First[#]//Length)==0,#,-#]&,letter]//Union*)
+letter//Union]
+
+(*ATotal[A_List]:=Map[Total[Union[Flatten[#//MapIndexed[toLogForm[#,First[#2]]&]]]]&,MapThread[List,Coefficient[A,Global`e],2],{2} ];*)
+
+(*ATotal[A_List,twists_List:Union[powers]]:=Union[powers]*)
+ATotal[A_List,twists_List:Union[powers]]:=Sum[twist*Map[Total[Union[Flatten[#//MapIndexed[toLogForm[#,First[#2]]&]]]]&,MapThread[List,Coefficient[A,twist],2],{2} ],{twist,twists}]//Quiet;
+
+
+EquationFlow[Amatrix_List,kineFlow_List]:=(
+phiS=Table["\[CurlyPhi]"<>ToString[j],{j,1,Length[Amatrix]}];
+phiStoNum=Thread[phiS->Range[Length[Amatrix]]];
+Flow=Table[Table[Amatrix[[kineFlow[[level,i]]]] . phiS,{i,1,Length[kineFlow[[level]]]}],{level,1,Length[kineFlow]}];
+Return[{Flow/Global`e//Apart,phiStoNum}]
+)
+
+
+End[];
+
+EndPackage[];
+

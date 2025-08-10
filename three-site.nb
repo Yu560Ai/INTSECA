@@ -1,0 +1,94 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 14.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      2864,         86]
+NotebookOptionsPosition[      1865,         62]
+NotebookOutlinePosition[      2272,         78]
+CellTagsIndexPosition[      2229,         75]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["3-site chain", "Section",
+ CellChangeTimes->{{3.963803834795006*^9, 
+  3.963803841565775*^9}},ExpressionUUID->"7f9754c7-1c79-bc45-99dc-\
+636e63aed233"],
+
+Cell["Definitions", "Subsection",
+ CellChangeTimes->{{3.96380385313118*^9, 
+  3.9638038563933735`*^9}},ExpressionUUID->"13b1aa01-46da-9941-b122-\
+f9aab7ee7388"],
+
+Cell["Basis functions", "Subsection",
+ CellChangeTimes->{{3.963803940464018*^9, 3.9638039410514984`*^9}, {
+  3.9638039783109207`*^9, 
+  3.9638039795368023`*^9}},ExpressionUUID->"c31ca9e2-f4e2-7546-921d-\
+d6fc23c46ea2"],
+
+Cell["Basis reduction", "Subsection",
+ CellChangeTimes->{{3.9638039599314613`*^9, 
+  3.9638039629244328`*^9}},ExpressionUUID->"3749fae8-7148-c54d-a1ab-\
+8c5d3ade00d9"],
+
+Cell["A matrix", "Subsection",
+ CellChangeTimes->{{3.963803982415392*^9, 
+  3.9638039982990646`*^9}},ExpressionUUID->"ad4ff809-27e6-1043-94ec-\
+b65aefefe594"],
+
+Cell[CellGroupData[{
+
+Cell["Differential equations", "Subsection",
+ CellChangeTimes->{{3.963804029037817*^9, 
+  3.963804051504532*^9}},ExpressionUUID->"054ab7ff-5371-f44d-b580-\
+00eb0e5700ba"],
+
+Cell["Translate A-matrix to ODE of the correlator:", "Text",
+ CellChangeTimes->{{3.9638040671274242`*^9, 
+  3.96380410170714*^9}},ExpressionUUID->"66c9a149-b10d-2641-8c57-\
+abdd766c6b2c"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1280, 732},
+WindowMargins->{{-5.5, Automatic}, {Automatic, -5.5}},
+FrontEndVersion->"14.0 for Microsoft Windows (64-bit) (December 12, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"8361a46a-0cb5-8a43-91e7-bf94d6c82e86"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 157, 3, 67, "Section",ExpressionUUID->"7f9754c7-1c79-bc45-99dc-636e63aed233"],
+Cell[740, 27, 160, 3, 54, "Subsection",ExpressionUUID->"13b1aa01-46da-9941-b122-f9aab7ee7388"],
+Cell[903, 32, 218, 4, 38, "Subsection",ExpressionUUID->"c31ca9e2-f4e2-7546-921d-d6fc23c46ea2"],
+Cell[1124, 38, 167, 3, 38, "Subsection",ExpressionUUID->"3749fae8-7148-c54d-a1ab-8c5d3ade00d9"],
+Cell[1294, 43, 158, 3, 38, "Subsection",ExpressionUUID->"ad4ff809-27e6-1043-94ec-b65aefefe594"],
+Cell[CellGroupData[{
+Cell[1477, 50, 170, 3, 38, "Subsection",ExpressionUUID->"054ab7ff-5371-f44d-b580-00eb0e5700ba"],
+Cell[1650, 55, 187, 3, 35, "Text",ExpressionUUID->"66c9a149-b10d-2641-8c57-abdd766c6b2c"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
