@@ -30,12 +30,14 @@ EquationFlow::usage = "{Flow,phiStoNum}, Differential equation of kinematic flow
 Needed::usage = "{basisNeed,AmatrixNeed}";
 ATotal::usage = "total derivative A-matrix (for single twist): entries are the Log functions";
 Letter::usage = "Collect all letter from the A-matrix (Log)";
+APRT::usage = "Fully Apart the entries of A-matrix";
 
 
 (* ::Section:: *)
 (*Set-up*)
 
 
+(*Global`powers={} (*define at first*)*)
 Begin["`Private`"];
 
 
