@@ -5,7 +5,7 @@
 
 
 BeginPackage["INTSECA`"];
-Print["INTSECA 1.2.0"]
+Print["INTSECA 1.2.1"]
 (*Print["Author: Yuhan Fu"];*)
 
 (*tools*)
@@ -326,10 +326,13 @@ letter=letterLog/. Log[x_]:>x;
 (*Map[If[(First[#]//Length)==0,#,-#]&,letter]//Union*)
 letter//Union]
 
-(*ATotal[A_List]:=Map[Total[Union[Flatten[#//MapIndexed[toLogForm[#,First[#2]]&]]]]&,MapThread[List,Coefficient[A,Global`e],2],{2} ];*)
-
-(*ATotal[A_List,twists_List:Union[powers]]:=Union[powers]*)
-ATotal[A_List,twists_List:Union[powers]]:=Sum[twist*Map[Total[Union[Flatten[#//MapIndexed[toLogForm[#,First[#2]]&]]]]&,MapThread[List,Coefficient[A,twist],2],{2} ],{twist,twists}]//Quiet;
+splitPlus=If[MatchQ[#,_Plus],List@@#,{#}]&;
+transformList=Flatten[splitPlus/@(FactorTerms/@#)]&;
+ATotal[A_List,twists_List]:=Module[{result},
+result=Map[transformList[#]&,Map[MapIndexed[toLogForm[#1,First@#2]&,#]&,MapThread[List,Coefficient[A,twists[[1]]],2],{2}],{3}];
+Sum[
+twist*Map[Total[Union[Flatten[#]]]&,result,{2}],{twist,twists}
+]]//Quiet;
 
 
 EquationFlow[Amatrix_List,kineFlow_List]:=(
