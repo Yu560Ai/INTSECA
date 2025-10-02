@@ -5,7 +5,7 @@
 
 
 BeginPackage["INTSECA`"];
-Print["INTSECA 1.2.1"]
+Print["INTSECA 1.2.3"]
 (*Print["Author: Yuhan Fu"];*)
 
 (*tools*)
@@ -58,11 +58,11 @@ psi = Global`psi;
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Intermediate variables*)
 
 
-(*Initialize*)
+(*(*Initialize*)
 initialize[] := (
 nplane = nBplane+nTplane;
 X = Append[Table[z[i] = Symbol["z" <> ToString[i]], {i, 1, dim}],1];
@@ -77,7 +77,34 @@ power=Join[ConstantArray[0,{nBplane}],powers];
 
 (*dkin=Map["d"<>ToString[#]&,kin];*)
 dkin = Map[Symbol["d" <> ToString[#]] &, kin];
+);*)
+
+
+initialize[] := (
+  nplane = nBplane + nTplane;
+  X = Append[Table[z[i] = Symbol["z" <> ToString[i]], {i, 1, dim}], 1];
+  
+  Lplanes = Join[
+    Table[Global`B[i] . X, {i, 1, nBplane}],
+    Table[Global`T[i] . X, {i, 1, nTplane}]
+  ];
+  
+  jacT = JacT[Lplanes];
+  permT = PermT[dim, nkin];
+  
+  Jac = Table[D[Lplanes[[i]], z[j]], {j, 1, dim}, {i, 1, Length[Lplanes]}];
+  
+  replaceTplane=Table[i->(i+nBplane),{i,1,nTplane}];
+  
+  (* handle nBplane=0 by making the constant array length 0 *)
+  power = Join[
+    If[nBplane > 0, ConstantArray[0, {nBplane}], {}],
+    powers
+  ];
+  
+  dkin = Map[Symbol["d" <> ToString[#]] &, kin];
 );
+
 
 
 (* ::Section:: *)
@@ -93,7 +120,7 @@ tp[f_]:=f/.\[LeftAngleBracket]a__\[RightAngleBracket]:>{a} (*transform \[LeftAng
 sort={\[LeftAngleBracket]a__\[RightAngleBracket]:>Signature[{a}]*t[Sort[{a}]]};
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Wedge product*)
 
 
@@ -151,7 +178,7 @@ Return[Join[(#==0&/@omegaV),multirelations]]
 
 Sol[mode_:1]:=(
 vertices=verticesList;
-relations=Relations[vertices,mode];
+relations=Relations[vertices,mode]// Simplify;
 sol=Solve[relations,vertices]//First//Cancel//Simplify//Quiet;
 Return[sol]
 )
